@@ -25,6 +25,23 @@ elixir.extend('home', function(message){
         module: {
           loaders: [
             {
+              test: /\.css$/,
+              use: [
+                {
+                  loader: 'style-loader',
+                  options: {
+                    minimize: true
+                  }
+                },
+                {
+                  loader: 'css-loader',
+                  options: {
+                    minimize: true
+                  }
+                }
+              ]
+            },
+            {
               test: /\.s?css$/,
               exclude: /node_modules/,
               use: [
