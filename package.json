@@ -52,6 +52,8 @@
     "imports-loader": "^0.7.1",
     "jquery-ui": "^1.12.1",
     "laravel-elixir": "^4.0.0",
+    "node-gyp": "^3.6.2",
+    "node-sass": "^4.7.2",
     "sass": "^1.0.0-beta.4"
   },
   "keywords": [

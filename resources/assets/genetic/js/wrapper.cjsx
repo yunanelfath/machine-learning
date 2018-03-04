@@ -1,6 +1,7 @@
 React = require('react')
 ReactDOM = require('react-dom')
 ReactBootstrap = require('react-bootstrap')
+_ = require('lodash')
 { FormGroup, FormControl, Grid, Row, Button } = ReactBootstrap
 styles = require('bootstrap-css')
 { Component } = React
@@ -24,26 +25,21 @@ class Wrapper extends Component
 	constructor: (props) ->
 		super(props)
 		@state = {
-		  items: knapsackItems
+		  knapsackItems: knapsackItems
 			chromosomItems: []
 		}
 
 	componentDidMount: ->
 		@randomingChromosom()
 
-	resetChromosomItem: =>
-		@setState(
-			chromosomItems: []
-		)
-
 	randomingChromosom: =>
-		{ items, chromosomItems } = @state
-		@resetChromosomItem()
+		{ knapsackItems, chromosomItems } = @state
+		chromosomItems = []
 		i = 1
-		while i <= 100
+		while i <= 30
 			ale = []
 			k = 0
-			while k <= items.length-1
+			while k < knapsackItems.length
 				min = 0
 				max = 1
 				randomValue = Math.floor(Math.random() * (max - min + 1))+min
@@ -51,14 +47,35 @@ class Wrapper extends Component
 				k++
 			chromosomItems.push(ale)
 			i++
-		console.log chromosomItems.length
+		console.log chromosomItems
 		@setState(
 			chromosomItems: chromosomItems
 		)
 
-	fitnessingValue: =>
-		# i = 0
-		# while i
+	fitnessingFormula: =>
+		{ chromosomItems, knapsackItems } = @state
+		fitnessValue = []
+		i = 0
+		while i <= chromosomItems.length-1
+			k = 0
+			sumFitnessItems = {}
+			sumFitnessItems.weight = 0
+			sumFitnessItems.value = 0
+			while k <= chromosomItems[i].length-1
+				if chromosomItems[i][k] != 0
+					sumFitnessItems.weight += knapsackItems[k]['weight']
+					sumFitnessItems.value += knapsackItems[k]['value']
+					sumFitnessItems.key = i
+				k++
+			if sumFitnessItems.weight > 20
+				sumFitnessItems = null
+			fitnessValue.push(sumFitnessItems)
+			i++
+		sortNFilter = _.filter(_.orderBy(fitnessValue, ['value'], ['desc']), (e) => e != null )
+
+		return sortNFilter
+
+
 
 	componentWillUnmount: ->
 		# @listener.remove()
@@ -69,8 +86,46 @@ class Wrapper extends Component
 		#   form: GeneralStore.form
 		# )
 
+	coupleingItems: (rouletteWheelItems) =>
+		items = []
+		singleItems = []
+		excludeItems = []
+		i = 0
+		while i < rouletteWheelItems.length
+			if !_.includes(excludeItems, rouletteWheelItems[i]['key'])
+				nextKeyIndex = i+1
+				if rouletteWheelItems[nextKeyIndex]
+					nextIndex = rouletteWheelItems[nextKeyIndex]
+					fillWith = first: rouletteWheelItems[i], second: nextIndex
+					items.push(fillWith)
+					excludeItems.push(nextIndex['key'])
+				else
+					singleItems.push(rouletteWheelItems[i])
+			i++
+
+		return items
+
+	crossOvering: (items) =>
+		{ chromosomItems } = @state
+		resultItems = []
+		i = 0
+		while i < items.length
+			induk1 = chromosomItems[items[i].first.key]
+			induk2 = chromosomItems[items[i].second.key]
+			maxRand = induk1.length-1
+			singlePointCrossOver = Math.floor(Math.random() * (maxRand - 0 + 1))+0
+			# if maxrand > singlePointCrossOver ambil yang paling sedikit
+			# anak1 =
+			debugger
+
 	onSubmit: =>
-		@randomingChromosom()
+		@randomingChromosom() #generate chromosom
+		rouletteWheel = @fitnessingFormula() # fitness value & roulette wheel selection
+		# debugger
+		# next step cross over & mutation
+		couples = @coupleingItems(rouletteWheel)
+		crossOver = @crossOvering(couples)
+		console.log rouletteWheel
 
 	render: ->
 		{ items } = @state
