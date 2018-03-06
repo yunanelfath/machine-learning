@@ -36,7 +36,7 @@ class Wrapper extends Component
 		{ knapsackItems, chromosomItems } = @state
 		chromosomItems = []
 		i = 1
-		while i <= 30
+		while i <= 20
 			ale = []
 			k = 0
 			while k < knapsackItems.length
@@ -47,7 +47,7 @@ class Wrapper extends Component
 				k++
 			chromosomItems.push(ale)
 			i++
-		console.log chromosomItems
+		# console.log chromosomItems
 		@setState(
 			chromosomItems: chromosomItems
 		)
@@ -114,9 +114,32 @@ class Wrapper extends Component
 			induk2 = chromosomItems[items[i].second.key]
 			maxRand = induk1.length-1
 			singlePointCrossOver = Math.floor(Math.random() * (maxRand - 0 + 1))+0
-			# if maxrand > singlePointCrossOver ambil yang paling sedikit
-			# anak1 =
+			startpoint = if maxRand-singlePointCrossOver > singlePointCrossOver then maxRand else 0
+
+			k = startpoint
+			anak1 = []
+			anak2 = []
+			fulled = false
 			debugger
+			while anak1.length-1 != induk1.length-1
+				if anak1.length >= 4
+					anak1.push(key: k, value: induk1[k])
+					anak2.push(key: k, value: induk2[k])
+				else
+					anak1.push(key: k, value: induk2[k])
+					anak2.push(key: k, value: induk1[k])
+				if startpoint == 0
+					k++
+				else
+					k--
+			anak1 = _.orderBy(anak1, ['key'], ['desc'])
+			anak2 = _.orderBy(anak2, ['key'], ['desc'])
+			anak = first: anak1, second: anak2
+			attributes = childrens: anak, first: items[i].first, second: items[i].second
+			debugger
+			resultItems.push(attributes)
+
+		return resultItems
 
 	onSubmit: =>
 		@randomingChromosom() #generate chromosom
@@ -126,6 +149,8 @@ class Wrapper extends Component
 		couples = @coupleingItems(rouletteWheel)
 		crossOver = @crossOvering(couples)
 		console.log rouletteWheel
+		console.log crossOver
+		debugger
 
 	render: ->
 		{ items } = @state
