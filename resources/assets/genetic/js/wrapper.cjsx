@@ -52,23 +52,28 @@ class Wrapper extends Component
 			chromosomItems: chromosomItems
 		)
 
+	knapsackValue: (ales, i=null) =>
+		k = 0
+		sumFitnessItems = {}
+		sumFitnessItems.weight = 0
+		sumFitnessItems.value = 0
+		while k <= ales.length-1
+			if ales[k] != 0
+				sumFitnessItems.weight += knapsackItems[k]['weight']
+				sumFitnessItems.value += knapsackItems[k]['value']
+				sumFitnessItems.key = i
+			k++
+		if sumFitnessItems.weight > 20
+			sumFitnessItems = null
+
+		return sumFitnessItems
+
 	fitnessingFormula: =>
 		{ chromosomItems, knapsackItems } = @state
 		fitnessValue = []
 		i = 0
 		while i <= chromosomItems.length-1
-			k = 0
-			sumFitnessItems = {}
-			sumFitnessItems.weight = 0
-			sumFitnessItems.value = 0
-			while k <= chromosomItems[i].length-1
-				if chromosomItems[i][k] != 0
-					sumFitnessItems.weight += knapsackItems[k]['weight']
-					sumFitnessItems.value += knapsackItems[k]['value']
-					sumFitnessItems.key = i
-				k++
-			if sumFitnessItems.weight > 20
-				sumFitnessItems = null
+			sumFitnessItems = @knapsackValue(chromosomItems[i], i)
 			fitnessValue.push(sumFitnessItems)
 			i++
 		sortNFilter = _.filter(_.orderBy(fitnessValue, ['value'], ['desc']), (e) => e != null )
@@ -105,6 +110,52 @@ class Wrapper extends Component
 
 		return items
 
+	crossOverLoop: (induk1, induk2, childrenNumber=0, finalChildren=[]) =>
+		maxRand = induk1.length-1
+		singlePointCrossOver = Math.floor(Math.random() * (maxRand - 0 + 1))+0
+		lengthPointCrossOver = 8
+		startpoint = if maxRand-singlePointCrossOver > singlePointCrossOver then maxRand else 0
+
+		k = startpoint
+		anak1 = []
+		anak2 = []
+		while anak1.length-1 != induk1.length-1
+			if anak1.length >= lengthPointCrossOver
+				anak1.push(key: k, value: induk1[k])
+				anak2.push(key: k, value: induk2[k])
+			else
+				anak1.push(key: k, value: induk2[k])
+				anak2.push(key: k, value: induk1[k])
+			if startpoint == 0
+				k++
+			else
+				k--
+		anak1 = _.orderBy(anak1, ['key'], ['asc'])
+		anak2 = _.orderBy(anak2, ['key'], ['asc'])
+		childrens = [anak1, anak2]
+
+		j = 0
+		resultChildrens = []
+		while j < childrens.length
+			l = 0
+			childrenAle = []
+			knapsackItem = {}
+			while l < childrens[j].length
+				childrenAle.push(childrens[j][l].value)
+				l++
+			knapsackValue = @knapsackValue(childrenAle)
+			knapsackItem = ale: childrenAle, value: knapsackValue, key: childrenNumber
+			if knapsackValue != null
+				resultChildrens.push(knapsackItem)
+			j++
+		finalChildren.push(resultChildrens)
+		if resultChildrens.length == 2
+			childrenNumber += 1
+			if childrenNumber <= 10
+				@crossOverLoop(resultChildrens[0].ale, resultChildrens[1].ale, childrenNumber, finalChildren)
+
+		return finalChildren
+
 	crossOvering: (items) =>
 		{ chromosomItems } = @state
 		resultItems = []
@@ -112,32 +163,11 @@ class Wrapper extends Component
 		while i < items.length
 			induk1 = chromosomItems[items[i].first.key]
 			induk2 = chromosomItems[items[i].second.key]
-			maxRand = induk1.length-1
-			singlePointCrossOver = Math.floor(Math.random() * (maxRand - 0 + 1))+0
-			startpoint = if maxRand-singlePointCrossOver > singlePointCrossOver then maxRand else 0
-
-			k = startpoint
-			anak1 = []
-			anak2 = []
-			fulled = false
+			crossOver = @crossOverLoop(induk1, induk2)
 			debugger
-			while anak1.length-1 != induk1.length-1
-				if anak1.length >= 4
-					anak1.push(key: k, value: induk1[k])
-					anak2.push(key: k, value: induk2[k])
-				else
-					anak1.push(key: k, value: induk2[k])
-					anak2.push(key: k, value: induk1[k])
-				if startpoint == 0
-					k++
-				else
-					k--
-			anak1 = _.orderBy(anak1, ['key'], ['desc'])
-			anak2 = _.orderBy(anak2, ['key'], ['desc'])
-			anak = first: anak1, second: anak2
-			attributes = childrens: anak, first: items[i].first, second: items[i].second
-			debugger
+			attributes = childrens: crossOver, first: items[i].first, second: items[i].second
 			resultItems.push(attributes)
+			i++
 
 		return resultItems
 
