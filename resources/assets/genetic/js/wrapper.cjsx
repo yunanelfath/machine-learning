@@ -110,6 +110,33 @@ class Wrapper extends Component
 
 		return items
 
+	mutationRateValue: (child1, child2) =>
+		i = 0
+		mutation1 = []
+		mutation2 = []
+		filled = false
+		while mutation1.length != child1.length
+			if child1[i] != child2[i] && !filled
+				mutation1.push(key: i, value: child2[i])
+				mutation2.push(key: i, value: child1[i])
+				filled = true
+			else
+				mutation1.push(key: i, value: child1[i])
+				mutation2.push(key: i, value: child2[i])
+			i++
+		j = 0
+		mutation1 = _.orderBy(mutation1, ['key'], ['asc'])
+		mutation2 = _.orderBy(mutation2, ['key'], ['asc'])
+		resultMutation1 = []
+		resultMutation2 = []
+		while j < mutation1.length
+			resultMutation1.push(mutation1[j].value)
+			resultMutation2.push(mutation2[j].value)
+			j++
+		resultKnapsack1 = @knapsackValue(resultMutation1)
+		resultKnapsack2 = @knapsackValue(resultMutation2)
+		return [{knapsack: resultKnapsack1, value: resultMutation1}, {knapsack: resultKnapsack2, value: resultMutation2}]
+
 	crossOverLoop: (induk1, induk2, childrenNumber=0, finalChildren=[]) =>
 		maxRand = induk1.length-1
 		singlePointCrossOver = Math.floor(Math.random() * (maxRand - 0 + 1))+0
@@ -148,11 +175,13 @@ class Wrapper extends Component
 			if knapsackValue != null
 				resultChildrens.push(knapsackItem)
 			j++
-		finalChildren.push(resultChildrens)
 		if resultChildrens.length == 2
+			mutationRate = @mutationRateValue(resultChildrens[0].ale, resultChildrens[1].ale)
+			resultChildrens.push(mutation: mutationRate)
 			childrenNumber += 1
-			if childrenNumber <= 10
+			if childrenNumber < 40
 				@crossOverLoop(resultChildrens[0].ale, resultChildrens[1].ale, childrenNumber, finalChildren)
+		finalChildren.push(resultChildrens)
 
 		return finalChildren
 
@@ -164,7 +193,6 @@ class Wrapper extends Component
 			induk1 = chromosomItems[items[i].first.key]
 			induk2 = chromosomItems[items[i].second.key]
 			crossOver = @crossOverLoop(induk1, induk2)
-			debugger
 			attributes = childrens: crossOver, first: items[i].first, second: items[i].second
 			resultItems.push(attributes)
 			i++
