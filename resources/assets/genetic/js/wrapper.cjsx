@@ -2,7 +2,7 @@ React = require('react')
 ReactDOM = require('react-dom')
 ReactBootstrap = require('react-bootstrap')
 _ = require('lodash')
-{ FormGroup, FormControl, Grid, Row, Button } = ReactBootstrap
+{ FormGroup, FormControl, Grid, Row, Button, Label } = ReactBootstrap
 styles = require('bootstrap-css')
 { Component } = React
 
@@ -26,17 +26,20 @@ class Wrapper extends Component
 		super(props)
 		@state = {
 		  knapsackItems: knapsackItems
+			chromosomItemsLength: 100
 			chromosomItems: []
+			rouletteWheelItems: []
+			crossOverItems: []
 		}
 
 	componentDidMount: ->
-		@randomingChromosom()
+		# @randomingChromosom()
 
 	randomingChromosom: =>
-		{ knapsackItems, chromosomItems } = @state
+		{ knapsackItems, chromosomItemsLength } = @state
 		chromosomItems = []
 		i = 1
-		while i <= 20
+		while i <= chromosomItemsLength
 			ale = []
 			k = 0
 			while k < knapsackItems.length
@@ -48,9 +51,7 @@ class Wrapper extends Component
 			chromosomItems.push(ale)
 			i++
 		# console.log chromosomItems
-		@setState(
-			chromosomItems: chromosomItems
-		)
+		return chromosomItems
 
 	knapsackValue: (ales, i=null) =>
 		k = 0
@@ -68,8 +69,8 @@ class Wrapper extends Component
 
 		return sumFitnessItems
 
-	fitnessingFormula: =>
-		{ chromosomItems, knapsackItems } = @state
+	fitnessingFormula: (chromosomItems) =>
+		{ knapsackItems } = @state
 		fitnessValue = []
 		i = 0
 		while i <= chromosomItems.length-1
@@ -185,8 +186,7 @@ class Wrapper extends Component
 
 		return finalChildren
 
-	crossOvering: (items) =>
-		{ chromosomItems } = @state
+	crossOvering: (items, chromosomItems) =>
 		resultItems = []
 		i = 0
 		while i < items.length
@@ -200,30 +200,89 @@ class Wrapper extends Component
 		return resultItems
 
 	onSubmit: =>
-		@randomingChromosom() #generate chromosom
-		rouletteWheel = @fitnessingFormula() # fitness value & roulette wheel selection
+		chromosomItems = @randomingChromosom() #generate chromosom
+		rouletteWheel = @fitnessingFormula(chromosomItems) # fitness value & roulette wheel selection
 		# debugger
 		# next step cross over & mutation
 		couples = @coupleingItems(rouletteWheel)
-		crossOver = @crossOvering(couples)
-		console.log rouletteWheel
-		console.log crossOver
-		debugger
+		crossOver = @crossOvering(couples, chromosomItems)
+		@setState(
+			rouletteWheelItems: rouletteWheel
+			crossOverItems: crossOver
+			chromosomItems: chromosomItems
+		)
 
 	render: ->
-		{ items } = @state
+		{ items, chromosomItems, rouletteWheelItems, crossOverItems, chromosomItemsLength } = @state
+
+		chromosomRowItem = (item, index) =>
+			tdItem = (i, k) =>
+				<td key={k} style={width: '30px', textAlign: 'center'}>{i}</td>
+			<tr key={index} style={borderBottom: '1px solid #ebebeb'}>
+				{
+					<td style={borderRight: '1px solid #ebebeb', width: '130px'}>Chromosom {index}</td>
+				}
+				{
+					item.map(tdItem)
+				}
+			</tr>
+		historyRowItem = (item, index) =>
+			<tr key={index} style={borderBottom: '1px solid #ebebeb'}>
+				{
+					<td>chromosom {item.first.key}x{item.second.key};{item.childrens.length} childrens+mutation</td>
+				}
+			</tr>
 
 		<Grid>
 			<FormGroup>
-				Chromosom = <input type="text" name="ga[chromosom]"/><br/>
-				Population = <input type="text" name="ga[population]"/><br/>
-				Generation = <input type="text" name="ga[generation]"/><br/>
-				CrossOver = <input type="text" name="ga[crossover]"/><br/>
-				Mutation = <input type="text" name="ga[mutation]"/><br/>
+				Chromosom = <input type="text" name="ga[chromosom]" value={chromosomItemsLength} disabled={true}/><br/>
+				CrossOver = <input type="text" name="ga[crossover]" value={'40%'} disabled={true}/><br/>
+				Mutation = <input type="text" name="ga[mutation]" value={'40%'} disabled={true}/><br/>
 			</FormGroup>
 			<FormGroup>
 				<Button onClick={@onSubmit.bind(@)}>Submit</Button>
 			</FormGroup>
+			{
+				if chromosomItems
+					<div>
+						<FormGroup style={height: '300px', overflowY: 'scroll', width: '470px', margin: 0, float: 'left'}>
+							<Label style={background: '#dadade'}>Chromosom Set</Label>
+							<table>
+								<tbody>
+									{
+										chromosomItems.map(chromosomRowItem)
+									}
+								</tbody>
+							</table>
+						</FormGroup>
+						<FormGroup style={height: '300px', overflowY: 'scroll', width: '470px', margin: 0, float: 'left'}>
+							<Label style={background: '#dadade'}>History</Label>
+							<table>
+								<tbody>
+									{
+										crossOverItems.map(historyRowItem)
+									}
+								</tbody>
+							</table>
+						</FormGroup>
+						{
+							if rouletteWheelItems.length > 0
+								<div>
+									<div style={background: '#dadade', display: 'inline-block'}>
+										Best Fitness,chromosom {rouletteWheelItems[0].key}, value {rouletteWheelItems[0].value}, weight {rouletteWheelItems[0].weight}
+									</div>
+									<br/>
+								</div>
+						}
+						{
+							if crossOverItems.length > 0
+								capacity = _.orderBy(crossOverItems, ['childrens'], ['desc'])
+								<div style={background: '#dadade', display: 'inline-block'}>
+									Best result to capacity,chromosom {capacity[0].first.key}, value {capacity[0].first.value}, weight {capacity[0].first.weight}
+								</div>
+						}
+					</div>
+			}
 		</Grid>
 
 Wrapper.defaultProps = {
